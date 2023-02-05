@@ -14,11 +14,7 @@ void InitalizeReadWriteLock(struct read_write_lock * rw)
 
 void ReaderLock(struct read_write_lock * rw)
 {
-  //	Write the code for aquiring read-write lock by the reader.
   pthread_mutex_lock(&rw->lock);
-  // if(rw->isReaderMode && rw->isWriterMode){
-  //   printf("GENJAM\n");
-  // }
   rw->readerCount++;
   while(rw->isWriterMode){
     pthread_cond_wait(&rw->readerCond,&rw->lock);
