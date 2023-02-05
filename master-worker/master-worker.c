@@ -46,8 +46,8 @@ void *generate_requests_loop(void *data) {
         }
 
         if(item_to_produce >= total_items) {
-	        pthread_cond_signal(&produced);
-            pthread_cond_signal(&consumed);
+	          pthread_cond_signal(&produced);
+            pthread_cond_signal(&consumed); //! why waking up both???? to make them stop
             pthread_mutex_unlock(&mcond);
             break;
         }

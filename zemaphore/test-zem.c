@@ -34,8 +34,7 @@ int main(int argc, char *argv[])
   pthread_create(&t2, NULL, justprint, &t2id);
   
   sleep(1);
-
-
+  
   //in spite of sleep, this should print first
   printf("This is main thread. This should print first\n");
 
