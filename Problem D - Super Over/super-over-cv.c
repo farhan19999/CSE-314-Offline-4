@@ -22,6 +22,7 @@ pthread_cond_t batting_done = PTHREAD_COND_INITIALIZER;
 pthread_cond_t bowling_done = PTHREAD_COND_INITIALIZER;
 
 
+
 void *throw_ball(void* ptr) {
     for(int i = 1 ; i<=total_ball ; i++) {
         pthread_mutex_lock(&cond_lock);    
@@ -94,12 +95,12 @@ int main() {
  
   
 
-    pthread_create(&baller_thr, NULL, throw_ball, NULL);
 
     for(int i = 0 ; i<NUM_OF_BATSMAN ; i++) {
         batter_id[i] = i;
         pthread_create(&batter_thr[i], NULL, hit_the_ball, &batter_id[i]);    
     }
+    pthread_create(&baller_thr, NULL, throw_ball, NULL);
 
     //signaling the bowler thread to start bowling
     pthread_cond_signal(&batting_done);
