@@ -98,13 +98,13 @@ int main() {
         zem_init(&batter[i], 0);
     }
 
-    pthread_create(&baller_thr, NULL, throw_ball, NULL);
 
     for(int i = 0 ; i<NUM_OF_BATSMAN ; i++) {
         batter_id[i] = i;
         pthread_create(&batter_thr[i], NULL, hit_the_ball, &batter_id[i]);    
     }
 
+    pthread_create(&baller_thr, NULL, throw_ball, NULL);
     //signaling the bowler thread to start bowling
     zem_up(&baller);
 
