@@ -27,7 +27,7 @@ int current_turn;
 void *throw_ball(void* ptr) {
     for(int i = 1 ; i<=total_ball ; i++) {
         pthread_mutex_lock(&cond_lock);    
-        while(current_turn == BATTER) {
+        while(current_turn == BATTER && next_batter<=NUM_OF_BATSMAN && ball_left >0) {
             printf("bowler is waiting\n");
             pthread_cond_wait(&batting_done, &cond_lock);
         }
@@ -37,6 +37,13 @@ void *throw_ball(void* ptr) {
             pthread_cond_broadcast(&bowling_done);
             pthread_mutex_unlock(&cond_lock);      
             printf("Bowler done\n");
+            break;
+        }
+        if(ball_left <= 0){
+            printf("NO BALLS LEFT");
+            current_turn = BATTER;
+            pthread_cond_broadcast(&bowling_done);
+            pthread_mutex_unlock(&cond_lock);
             break;
         }
         printf("The bowler balled %dth ball of the over\n", i);
@@ -55,7 +62,7 @@ void *hit_the_ball(void* ptr) {
         while(on_strike != id && (next_batter <= NUM_OF_BATSMAN && ball_left > 0)) {
             pthread_cond_wait(&bowling_done, &cond_lock);
         }
-        while(current_turn == BATTER) {
+        while(current_turn == BALLER && next_batter<=NUM_OF_BATSMAN && ball_left > 0) {
             printf("batter %d is waiting for baller\n",id);
             pthread_cond_wait(&bowling_done,&cond_lock);
         }
