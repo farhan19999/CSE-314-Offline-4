@@ -25,12 +25,15 @@ zem_t mlock;
 
 void *throw_ball(void* ptr) {
     
-    for(int i = 1 ; i<=total_ball ; i++) {
+    for(int i = 1 ; i<=total_ball+1 ; i++) {
         zem_down(&baller);
         //zem_down(&mlock);
-        if(next_batter > NUM_OF_BATSMAN) {
+        if(next_batter > NUM_OF_BATSMAN ) {
             printf("The batting team is bowled out\n");
             //zem_up(&mlock);
+            break;
+        }
+        if(i==total_ball+1){
             break;
         }
         printf("The bowler balled %dth ball of the over\n", i);
@@ -49,20 +52,26 @@ void *hit_the_ball(void* ptr) {
     while(1) {
         zem_down(&batter[id]);
         //zem_down(&mlock);
-        if(next_batter > NUM_OF_BATSMAN || ball_left == 0) {
+        if(next_batter > NUM_OF_BATSMAN || ball_left <= 0) {
             //printf("The batting team is bowled out\n");
             //zem_up(&mlock);
             break;
         }
+        
         int run = rand()%8;
         
         if((run >= 0 && run<4) || run == 5) {
 
-            int t = on_strike;
-            on_strike = off_strike;
-            off_strike = t;
-
-            printf("The batter %d has taken %d run and swapped strike\n", id, run);
+           if((run%2)==1) {
+                int t = on_strike;
+                on_strike = off_strike;
+                off_strike = t;
+                printf("The batter %d has taken %d run and swapped strike\n", id, run);
+            }
+            else {
+                if(run)printf("The batter %d has taken %d run \n", id, run);
+                else printf("The batter %d was unable to take a run\n", id);
+            }
         }
         else if(run == 4 || run == 6) {
             printf("The batter %d has hit a **%d**\n", id, run);
@@ -84,7 +93,7 @@ void *hit_the_ball(void* ptr) {
 
 int main() {
 
-    srand(0);
+    srand(time(0));
 
     pthread_t baller_thr;
     pthread_t batter_thr[NUM_OF_BATSMAN];

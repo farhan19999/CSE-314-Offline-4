@@ -25,22 +25,24 @@ pthread_cond_t batting_done = PTHREAD_COND_INITIALIZER;
 void *throw_ball(void* ptr) {
     for(int i = 1 ; i<=total_ball ; i++) {
         pthread_mutex_lock(&cond_lock);    
-        pthread_cond_wait(&batting_done, &cond_lock);
-        if(on_strike < 0 ) {
-            //game hasn't started
-            on_strike = 0;
-        }
+        while(turn && !(next_batter > NUM_OF_BATSMAN))pthread_cond_wait(&batting_done, &cond_lock);
+        
         if(next_batter > NUM_OF_BATSMAN) {
             printf("The batting team is bowled out\n");
-            turn = 1;
+            turn =1;
             for(int j = 0 ; j<NUM_OF_BATSMAN ; j++) pthread_cond_signal(&bowling_done[j]);
             pthread_mutex_unlock(&cond_lock);      
             break;
         }
         printf("The bowler balled %dth ball of the over\n", i);
-        turn=1;
+        turn =1;
         pthread_cond_signal(&bowling_done[on_strike]);
         pthread_mutex_unlock(&cond_lock);
+    }
+
+    for(int j = 0 ; j<NUM_OF_BATSMAN ; j++) {
+        
+        pthread_cond_signal(&bowling_done[j]);
     }
 }
 
@@ -50,11 +52,12 @@ void *hit_the_ball(void* ptr) {
     while(1) {
         pthread_mutex_lock(&cond_lock);    
         
-        pthread_cond_wait(&bowling_done[id], &cond_lock);
+        while(turn == 0 && !(next_batter > NUM_OF_BATSMAN || ball_left == 0) )pthread_cond_wait(&bowling_done[id], &cond_lock);
         
         if(next_batter > NUM_OF_BATSMAN || ball_left == 0) {
-            turn = 0;
+            turn =0;
             pthread_cond_signal(&batting_done);
+            for(int j = 0 ; j<NUM_OF_BATSMAN ; j++) pthread_cond_signal(&bowling_done[j]);
             pthread_mutex_unlock(&cond_lock);
             break;
         }
@@ -82,11 +85,12 @@ void *hit_the_ball(void* ptr) {
             next_batter++;
             printf("The batter %d is out\n", id);
             ball_left--;
+            turn =0;
             pthread_cond_signal(&batting_done);
             pthread_mutex_unlock(&cond_lock);
             break;
         }
-        turn = 0;
+        turn =0;
         ball_left--;
         pthread_cond_signal(&batting_done);
         pthread_mutex_unlock(&cond_lock);
