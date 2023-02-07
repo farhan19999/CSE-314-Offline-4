@@ -6,3 +6,5 @@ zemaphore/test-zem
 .vscode/settings.json
 master-worker/output
 master-worker/master-worker
+zemaphore/super-zem
+*.o
