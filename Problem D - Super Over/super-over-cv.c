@@ -25,10 +25,10 @@ enum TURN {BALLER, BATTER};
 int current_turn;
 
 void *throw_ball(void* ptr) {
-    for(int i = 1 ; i<=total_ball ; i++) {
+    while(1) {
         pthread_mutex_lock(&cond_lock);    
         while(current_turn == BATTER && next_batter<=NUM_OF_BATSMAN && ball_left >0) {
-            printf("bowler is waiting\n");
+            // printf("bowler is waiting\n");
             pthread_cond_wait(&batting_done, &cond_lock);
         }
         if(next_batter > NUM_OF_BATSMAN) {
@@ -40,13 +40,14 @@ void *throw_ball(void* ptr) {
             break;
         }
         if(ball_left <= 0){
-            printf("NO BALLS LEFT");
+            // printf("NO BALLS LEFT");
             current_turn = BATTER;
             pthread_cond_broadcast(&bowling_done);
             pthread_mutex_unlock(&cond_lock);
+            printf("Bowler done\n");
             break;
         }
-        printf("The bowler balled %dth ball of the over\n", i);
+        printf("The bowler balled %dth ball of the over\n", total_ball-ball_left+1);
         current_turn = BATTER;
         pthread_cond_broadcast(&bowling_done);
         pthread_mutex_unlock(&cond_lock);
@@ -60,29 +61,33 @@ void *hit_the_ball(void* ptr) {
         pthread_mutex_lock(&cond_lock);    
         
         while(on_strike != id && (next_batter <= NUM_OF_BATSMAN && ball_left > 0)) {
+            // printf("batter %d is waiting\n",id);
             pthread_cond_wait(&bowling_done, &cond_lock);
         }
         while(current_turn == BALLER && next_batter<=NUM_OF_BATSMAN && ball_left > 0) {
-            printf("batter %d is waiting for baller\n",id);
+            // printf("batter %d is waiting for baller\n",id);
             pthread_cond_wait(&bowling_done,&cond_lock);
         }
 
-        if(next_batter > NUM_OF_BATSMAN || ball_left == 0) {
+        if(next_batter > NUM_OF_BATSMAN || ball_left <= 0) {
             current_turn = BALLER;
             pthread_cond_signal(&batting_done);
             pthread_mutex_unlock(&cond_lock);
-            printf("Leaving thread batter %d\n",id);
+            // printf("Leaving thread batter %d %d\n",id,current_turn);
             break;
         }
         int run = rand()%8;
-        
-        if((run >= 0 && run<4) || run == 5) {
-
-            int t = on_strike;
-            on_strike = off_strike;
-            off_strike = t;
-
-            printf("The batter %d has taken %d run and swapped strike\n", id, run);
+        if(run == 0){
+            printf("Batter didnot score any run\n");
+        }
+        if((run > 0 && run<4) || run == 5) {
+            if(run%2){
+                int t = on_strike;
+                on_strike = off_strike;
+                off_strike = t;
+                printf("The batter %d has taken %d run and swapped strike\n", id, run);
+            }
+            else printf("The batter %d has taken %d run \n", id, run);
         }
         else if(run == 4 || run == 6) {
             printf("The batter %d has hit a **%d**\n", id, run);
@@ -91,12 +96,13 @@ void *hit_the_ball(void* ptr) {
             // 7 run means out
             on_strike = next_batter;
             next_batter++;
+            ball_left--;
             printf("next Batter %d made by batter %d\n", next_batter,id);
             printf("The batter %d is out\n", id);
             current_turn = BALLER;
             pthread_cond_broadcast(&batting_done);
             pthread_mutex_unlock(&cond_lock);
-            printf("Leaving thread batter %d\n",id);
+            // printf("Leaving thread batter %d %d\n",id,current_turn);
             break;
         }
         current_turn = BALLER;
@@ -109,7 +115,7 @@ void *hit_the_ball(void* ptr) {
 
 int main() {
 
-    srand(0);
+    srand(time(0));
 
     pthread_t baller_thr;
     pthread_t batter_thr[NUM_OF_BATSMAN];
@@ -118,14 +124,12 @@ int main() {
     batter_id = (int*)malloc(sizeof(int));
 
     current_turn = BALLER;
-  
-
+    pthread_create(&baller_thr, NULL, throw_ball, NULL);
 
     for(int i = 0 ; i<NUM_OF_BATSMAN ; i++) {
         batter_id[i] = i;
         pthread_create(&batter_thr[i], NULL, hit_the_ball, &batter_id[i]);    
     }
-    pthread_create(&baller_thr, NULL, throw_ball, NULL);
 
     //signaling the bowler thread to start bowling
     pthread_cond_signal(&batting_done);
